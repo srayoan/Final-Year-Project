@@ -1,0 +1,118 @@
+#include <Wire.h>
+#include <Servo.h>
+#include <LiquidCrystal_I2C.h>
+
+#define TRIGGER_PIN1 2
+#define ECHO_PIN1 3
+#define TRIGGER_PIN2 4
+#define ECHO_PIN2 5
+#define RED_LED_PIN 6
+#define YELLOW_LED_PIN 7
+#define GREEN_LED_PIN 8
+#define BUZZER_PIN 9
+#define SERVO_PIN 10
+
+#define LCD_ADDRESS 0x27
+#define LCD_COLUMNS 16
+#define LCD_ROWS 2
+
+Servo barrierServo;
+LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLUMNS, LCD_ROWS);
+
+void setup() {
+  pinMode(TRIGGER_PIN1, OUTPUT);
+  pinMode(ECHO_PIN1, INPUT);
+  pinMode(TRIGGER_PIN2, OUTPUT);
+  pinMode(ECHO_PIN2, INPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(YELLOW_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+  
+  barrierServo.attach(SERVO_PIN);
+  barrierServo.write(90); // Initially, set the servo to the closed position
+  
+  // Initialize the LCD display
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+}
+
+void loop() {
+  int slotsLeft = 4;
+  
+  // Display initial welcome message with slots left
+  lcd.setCursor(0, 0);
+  lcd.print("Welcome   Buddy! ");
+  lcd.setCursor(0, 1);
+  lcd.print("Slots left: ");
+  lcd.print(slotsLeft);
+  
+  while (slotsLeft > 0) {
+    digitalWrite(YELLOW_LED_PIN, HIGH); // Yellow light on
+    
+    // Measure distance from ultrasonic sensor 1
+    long duration1, distance1;
+    digitalWrite(TRIGGER_PIN1, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIGGER_PIN1, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIGGER_PIN1, LOW);
+    duration1 = pulseIn(ECHO_PIN1, HIGH);
+    distance1 = duration1 * 0.034 / 2;
+  
+    // Check if car is detected by sensor 1
+    if (distance1 < 10) {
+      // Rotate servo motor to open barrier
+      barrierServo.write(0);
+      digitalWrite(GREEN_LED_PIN, HIGH); // Green light on
+      digitalWrite(YELLOW_LED_PIN, LOW); // Yellow light off
+      delay(1000); // Wait for 1 second
+      
+      // Measure distance from ultrasonic sensor 2
+      long duration2, distance2;
+      digitalWrite(TRIGGER_PIN2, LOW);
+      delayMicroseconds(2);
+      digitalWrite(TRIGGER_PIN2, HIGH);
+      delayMicroseconds(10);
+      digitalWrite(TRIGGER_PIN2, LOW);
+      duration2 = pulseIn(ECHO_PIN2, HIGH);
+      distance2 = duration2 * 0.034 / 2;
+      
+      // Check if car is detected by sensor 2
+      if (distance2 < 10) {
+        // Rotate servo motor to close barrier
+        barrierServo.write(90);
+        digitalWrite(YELLOW_LED_PIN, HIGH); // Yellow light on
+        digitalWrite(GREEN_LED_PIN, LOW); // Green light off
+        delay(1000); // Wait for 1 second
+        
+        // Update slots left
+        slotsLeft--;
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Slots left: ");
+        lcd.print(slotsLeft);
+      }
+    }
+  }
+  
+  // When all slots are filled
+  digitalWrite(RED_LED_PIN, HIGH); // Red light on
+  digitalWrite(YELLOW_LED_PIN, LOW); // Yellow light off
+  digitalWrite(GREEN_LED_PIN, LOW); // Green light off
+  digitalWrite(BUZZER_PIN, HIGH); // Buzzer sound on
+  delay(1000); // Wait for 1 second
+  digitalWrite(RED_LED_PIN, LOW); // Red light off
+  digitalWrite(BUZZER_PIN, LOW); // Buzzer sound off
+  
+  // Display message for no slots left
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Sorry! No slots");
+  lcd.setCursor(0, 1);
+  lcd.print("are left");
+  
+  // Wait for 5 seconds
+  delay(5000);
+}

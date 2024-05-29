@@ -1,0 +1,31 @@
+#include <Wire.h>  // Include the Wire library for I2C communication
+#include <LiquidCrystal_I2C.h>  // Include the LiquidCrystal_I2C library
+
+#define LCD_ADDRESS 0x27  // Set the I2C address of your LCD display
+#define LCD_COLUMNS 16    // Number of columns in your LCD display
+#define LCD_ROWS 2        // Number of rows in your LCD display
+
+// Initialize the LiquidCrystal_I2C library with the I2C address
+LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLUMNS, LCD_ROWS);
+
+void setup() {
+  // Initialize the LCD display
+  lcd.init();
+  
+  // Turn on the backlight (if your LCD display has one)
+  lcd.backlight();
+
+  // Clear the LCD display and print a message on the first line
+  lcd.clear();
+  lcd.setCursor(0, 0); // Set cursor to the first column of the first row
+  lcd.print("Hello, World!");
+}
+
+void loop() {
+  // Your main code here
+}
+
+
+Demo video link
+
+https://youtu.be/Xc_lwx_-fPw?feature=shared
